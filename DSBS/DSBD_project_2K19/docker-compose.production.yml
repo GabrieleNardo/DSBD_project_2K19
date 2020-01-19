@@ -1,0 +1,53 @@
+version: '3'
+services:
+    videomanagementservice:
+      image: vms1:hw1
+      depends_on:
+        - database
+        - videoprocessingservice
+      volumes:
+        - ./storage:/app/var
+      environment:
+        DATASOURCE_URL: jdbc:mysql://database:3306/video_manager
+        DATASOURCE_USER: springuser
+        DATASOURCE_PASSWORD: DS2019!
+      restart: on-failure
+      
+    videoprocessingservice:
+     image: vps:hw1
+      volumes:
+        - ./storage:/app/var
+      restart: always
+    
+    apigw:
+      image: apigw:hw1
+      ports:
+        - "8070:8070"
+      depends_on:
+        - VideoManagementService
+      volumes:
+        - ./storage:/app/var
+      restart: always
+
+    prometheus:
+      image: prom/prometheus
+      volumes: 
+        - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      command: 
+        - '--config.file=/etc/prometheus/prometheus.yml'
+      ports: 
+        - "9091:9090"
+
+    database:
+      image: mysql:5.7
+      ports:
+        - "3307:3306"
+      environment:
+        MYSQL_DATABASE: video_manager
+        MYSQL_USER: springuser
+        MYSQL_PASSWORD: DS2019!
+        MYSQL_ROOT_PASSWORD: root
+      restart: always
+      
+volumes:
+    storage:

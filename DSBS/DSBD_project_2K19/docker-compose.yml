@@ -1,0 +1,64 @@
+version: '3'
+services:
+    videomanagementservice:
+      build:
+        context: VideoManagementService
+        dockerfile: Dockerfile-dev
+      depends_on:
+        - database
+        - videoprocessingservice
+      restart: on-failure
+      volumes:
+        - ./storage:/app/var
+      environment:
+        MYSQL_HOST: database
+        DATASOURCE_URL: jdbc:mysql://database:3306/video_manager
+        DATASOURCE_USER: springuser
+        DATASOURCE_PASSWORD: DS2019!
+      
+    videoprocessingservice:
+      build:
+        context: ​VideoProcessingService
+        dockerfile: Dockerfile-dev
+      volumes:
+        - ./storage:/app/var
+      ports:
+        - "8090:8090"
+    
+    apigw:
+      build: 
+        context: SpringCloud_API_Gateway
+        dockerfile: Dockerfile-dev
+      ports:
+        - "8070:8070"
+      depends_on:
+        - videomanagementservice
+        - videoprocessingservice
+      volumes:
+        - ./storage:/app/var
+    
+    prometheus:
+      image: prom/prometheus
+      volumes: 
+        - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      command: 
+        - '--config.file=/etc/prometheus/prometheus.yml'
+      ports: 
+        - "9091:9090"
+      depends_on: 
+        - apigw
+
+    database:
+      image: mysql:5.7
+      ports:
+        - "3307:3306"
+      environment:
+        MYSQL_DATABASE: video_manager
+        MYSQL_USER: springuser
+        MYSQL_PASSWORD: DS2019!
+        MYSQL_ROOT_PASSWORD: root
+        
+volumes:
+    storage:
+
+
